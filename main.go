@@ -1,22 +1,13 @@
 package main
 
 const (
-	dbFile       = "block-chain.db"
-	blocksBucket = "blocksBucket"
-)
-
-const (
-	cmdAddBlock   = "addblock"
-	argsData      = "data"
-	cmdPrintChain = "printchain"
+	dbFile              = "block-chain.db"
+	blocksBucket        = "blocksBucket"
+	subsidy             = 50
+	genesisCoinbaseData = "Genesis data"
 )
 
 func main() {
-	chain := NewBlockchain()
-
-	// chain.AddBlock("Send 1 BTC to zw")
-	// chain.AddBlock("Send 1 more BTC to yy")
-
-	cli := NewCLI(chain)
+	cli := NewCLI()
 	cli.Run()
 }
