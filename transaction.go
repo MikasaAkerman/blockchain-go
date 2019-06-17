@@ -35,11 +35,6 @@ type TxOutput struct {
 	PubKeyHash []byte
 }
 
-// SetID generate transaction id
-func (t *Transaction) SetID() {
-	t.ID = t.Hash()
-}
-
 // CanUnlockOutputWith ...
 func (in *TxInput) CanUnlockOutputWith(unlockData []byte) bool {
 	hash := HashPublicKey(in.PubKey)
@@ -78,7 +73,7 @@ func NewCoinbaseTX(to, data string) *Transaction {
 	tout := NewTxOutput(subsidy, to)
 
 	tx := Transaction{Vin: []TxInput{tin}, Vout: []TxOutput{*tout}}
-	tx.SetID()
+	tx.ID = tx.Hash()
 
 	return &tx
 }
@@ -103,7 +98,7 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transactio
 		}
 
 		for _, out := range outs {
-			inputs = append(inputs, TxInput{txID, out, nil, []byte(from)})
+			inputs = append(inputs, TxInput{txID, out, nil, wallet.PublicKey})
 		}
 	}
 
@@ -113,7 +108,7 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transactio
 	}
 
 	tx := Transaction{nil, inputs, outputs}
-	tx.SetID()
+	tx.ID = tx.Hash()
 	bc.SignTransactioin(&tx, wallet.PrivateKey)
 
 	return &tx
