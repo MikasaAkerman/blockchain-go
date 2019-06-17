@@ -38,11 +38,6 @@ func (pow *ProofOfWork) prepartData(nonce int) []byte {
 	return data
 }
 
-// IntToHex conver int to bytes
-func IntToHex(i int64) []byte {
-	return big.NewInt(i).Bytes()
-}
-
 // Run run the mining action
 func (pow *ProofOfWork) Run() (int, []byte) {
 	var hashInt big.Int

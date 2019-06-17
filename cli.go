@@ -118,3 +118,21 @@ func (cli *CLI) send(from, to string, amount int) {
 
 	fmt.Println("success")
 }
+
+func (cli *CLI) createWallet() {
+	wallets := NewWallets()
+	address := wallets.CreateWallet()
+	wallets.SaveToFile()
+
+	fmt.Printf("Your new address: %s\n", address)
+}
+
+func (cli *CLI) listAddresses() {
+	wallets := NewWallets()
+	addresses := wallets.Addresses()
+
+	fmt.Println("Your wallets address list:")
+	for _, address := range addresses {
+		fmt.Println("		", address)
+	}
+}
