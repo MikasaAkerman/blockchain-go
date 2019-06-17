@@ -91,7 +91,8 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transactio
 	wallets := NewWallets()
 	wallet := wallets.Wallet(from)
 
-	acc, validOutputs := bc.FindSpendableOutputs(from, amount)
+	pubKey := HashPublicKey(wallet.PublicKey)
+	acc, validOutputs := bc.FindSpendableOutputs(pubKey, amount)
 	if acc < amount {
 		log.Fatalf("Not enough balance: left %d", acc)
 	}
@@ -153,6 +154,12 @@ func (t *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transact
 		return
 	}
 
+	for _, vin := range t.Vin {
+		if prevTXs[hex.EncodeToString(vin.Txid)].ID == nil {
+			log.Fatal("ERROR: Previous transaction is not correct")
+		}
+	}
+
 	copyTX := t.TrimmedCopy()
 
 	for index, in := range copyTX.Vin {
@@ -175,6 +182,15 @@ func (t *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transact
 
 // Verify ...
 func (t *Transaction) Verify(prevTXs map[string]Transaction) bool {
+	if t.IsCoinbase() {
+		return true
+	}
+	for _, vin := range t.Vin {
+		if prevTXs[hex.EncodeToString(vin.Txid)].ID == nil {
+			log.Fatal("ERROR: Previous transaction is not correct")
+		}
+	}
+
 	copyTX := t.TrimmedCopy()
 	curve := elliptic.P256()
 
@@ -198,7 +214,7 @@ func (t *Transaction) Verify(prevTXs map[string]Transaction) bool {
 		x.SetBytes(in.PubKey[:(keyLen / 2)])
 		y.SetBytes(in.PubKey[(keyLen / 2):])
 
-		rawPubKey := ecdsa.PublicKey{curve, &x, &y}
+		rawPubKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
 
 		if !ecdsa.Verify(&rawPubKey, copyTX.ID, &r, &s) {
 			return false

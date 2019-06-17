@@ -153,7 +153,7 @@ func (bc *Blockchain) VerifyTransaction(tx *Transaction) bool {
 }
 
 // FindUnspentTransactions ...
-func (bc *Blockchain) FindUnspentTransactions(address string) []Transaction {
+func (bc *Blockchain) FindUnspentTransactions(address []byte) []Transaction {
 	var uTxs []Transaction             // unspent transactions
 	var sTxOs = make(map[string][]int) // spented transaction outputs
 	iter := bc.Iterator()
@@ -174,7 +174,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []Transaction {
 					}
 				}
 
-				if output.CanUnlockedWith([]byte(address)) {
+				if output.CanUnlockedWith(address) {
 					uTxs = append(uTxs, *tx)
 					break
 				}
@@ -182,7 +182,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []Transaction {
 
 			if !tx.IsCoinbase() {
 				for _, in := range tx.Vin {
-					if in.CanUnlockOutputWith([]byte(address)) {
+					if in.CanUnlockOutputWith(address) {
 						inTxID := hex.EncodeToString(in.Txid)
 						sTxOs[inTxID] = append(sTxOs[inTxID], in.Vout)
 					}
@@ -199,7 +199,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []Transaction {
 }
 
 // FindUTXO find unspent transaction outputs
-func (bc *Blockchain) FindUTXO(address string) []TxOutput {
+func (bc *Blockchain) FindUTXO(address []byte) []TxOutput {
 	var txos []TxOutput
 	utxs := bc.FindUnspentTransactions(address)
 	for _, tx := range utxs {
@@ -213,7 +213,7 @@ func (bc *Blockchain) FindUTXO(address string) []TxOutput {
 }
 
 // FindSpendableOutputs ...
-func (bc *Blockchain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
+func (bc *Blockchain) FindSpendableOutputs(address []byte, amount int) (int, map[string][]int) {
 	utxos := make(map[string][]int)
 	accumulate := 0
 	utxs := bc.FindUnspentTransactions(address)
@@ -223,7 +223,7 @@ loop:
 		txID := hex.EncodeToString(tx.ID)
 
 		for index, out := range tx.Vout {
-			if out.CanUnlockedWith([]byte(address)) && accumulate < amount {
+			if out.CanUnlockedWith(address) && accumulate < amount {
 				accumulate += out.Value
 				utxos[txID] = append(utxos[txID], index)
 				if accumulate >= amount {
