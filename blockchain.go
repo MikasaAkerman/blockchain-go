@@ -134,9 +134,10 @@ func (bc *Blockchain) findPrevTx(tx *Transaction) map[string]Transaction {
 
 	for _, in := range tx.Vin {
 		prevTX, err := bc.FindTransaction(in.Txid)
-		if err == nil {
-			prevTXs[hex.EncodeToString(in.Txid)] = prevTX
+		if err != nil {
+			log.Fatal(err)
 		}
+		prevTXs[hex.EncodeToString(in.Txid)] = prevTX
 	}
 	return prevTXs
 }
@@ -176,7 +177,6 @@ func (bc *Blockchain) FindUnspentTransactions(address []byte) []Transaction {
 
 				if output.CanUnlockedWith(address) {
 					uTxs = append(uTxs, *tx)
-					break
 				}
 			}
 

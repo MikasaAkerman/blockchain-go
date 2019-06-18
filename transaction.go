@@ -83,8 +83,7 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transactio
 	var inputs []TxInput
 	var outputs []TxOutput
 
-	wallets := NewWallets()
-	wallet := wallets.Wallet(from)
+	wallet := NewWallets().Wallet(from)
 
 	pubKey := HashPublicKey(wallet.PublicKey)
 	acc, validOutputs := bc.FindSpendableOutputs(pubKey, amount)
@@ -120,7 +119,7 @@ func (t *Transaction) IsCoinbase() bool {
 }
 
 // TrimmedCopy ...
-func (t *Transaction) TrimmedCopy() *Transaction {
+func (t *Transaction) TrimmedCopy() Transaction {
 	var inputs []TxInput
 	var outputs []TxOutput
 	for _, input := range t.Vin {
@@ -130,7 +129,7 @@ func (t *Transaction) TrimmedCopy() *Transaction {
 		outputs = append(outputs, TxOutput{output.Value, output.PubKeyHash})
 	}
 
-	return &Transaction{t.ID, inputs, outputs}
+	return Transaction{t.ID, inputs, outputs}
 }
 
 // Hash ...
@@ -189,7 +188,7 @@ func (t *Transaction) Verify(prevTXs map[string]Transaction) bool {
 	copyTX := t.TrimmedCopy()
 	curve := elliptic.P256()
 
-	for index, in := range copyTX.Vin {
+	for index, in := range t.Vin {
 		prevTX := prevTXs[hex.EncodeToString(in.Txid)]
 		copyTX.Vin[index].Signature = nil
 		copyTX.Vin[index].PubKey = prevTX.Vout[in.Vout].PubKeyHash
@@ -220,7 +219,7 @@ func (t *Transaction) Verify(prevTXs map[string]Transaction) bool {
 }
 
 // Serialize ...
-func (t *Transaction) Serialize() []byte {
+func (t Transaction) Serialize() []byte {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(t)
