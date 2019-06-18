@@ -126,28 +126,26 @@ func (u UTxOSet) Update(block *Block) {
 		b := tx.Bucket([]byte(utxoBucket))
 
 		for _, tx := range block.Transactions {
-			if tx.IsCoinbase() {
-				continue
-			}
+			if !tx.IsCoinbase() {
+				for _, in := range tx.Vin {
+					updatedOuts := TxOutputs{}
+					outsBytes := b.Get(in.Txid)
 
-			for _, in := range tx.Vin {
-				updatedOuts := TxOutputs{}
-				outsBytes := b.Get(in.Txid)
-
-				outs := DeserializeOutputs(outsBytes)
-				for index, out := range *outs {
-					if in.Vout != index {
-						updatedOuts = append(updatedOuts, out)
-					}
-					if len(updatedOuts) == 0 {
-						err := b.Delete(in.Txid)
-						if err != nil {
-							log.Fatal(err)
+					outs := DeserializeOutputs(outsBytes)
+					for index, out := range *outs {
+						if in.Vout != index {
+							updatedOuts = append(updatedOuts, out)
 						}
-					} else {
-						err := b.Put(in.Txid, updatedOuts.Serialize())
-						if err != nil {
-							log.Fatal(err)
+						if len(updatedOuts) == 0 {
+							err := b.Delete(in.Txid)
+							if err != nil {
+								log.Fatal(err)
+							}
+						} else {
+							err := b.Put(in.Txid, updatedOuts.Serialize())
+							if err != nil {
+								log.Fatal(err)
+							}
 						}
 					}
 				}
