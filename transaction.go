@@ -21,49 +21,6 @@ type Transaction struct {
 	Vout []TxOutput
 }
 
-// TxInput input of transactions
-type TxInput struct {
-	Txid      []byte
-	Vout      int
-	Signature []byte
-	PubKey    []byte
-}
-
-// TxOutput output of transactions
-type TxOutput struct {
-	Value      int
-	PubKeyHash []byte
-}
-
-// CanUnlockOutputWith ...
-func (in *TxInput) CanUnlockOutputWith(unlockData []byte) bool {
-	hash := HashPublicKey(in.PubKey)
-	return bytes.Compare(unlockData, hash) == 0
-}
-
-// CanUnlockedWith ...
-func (out *TxOutput) CanUnlockedWith(unlockData []byte) bool {
-	return bytes.Compare(out.PubKeyHash, unlockData) == 0
-}
-
-// func NewTxInput()
-
-// Lock lock the output by given address
-// set output's publickey
-func (out *TxOutput) Lock(address []byte) {
-	payload := Base58Decode(address)
-	pubKeyHash := payload[len([]byte{version}) : len(payload)-addressChecksumLen]
-	out.PubKeyHash = pubKeyHash
-}
-
-// NewTxOutput ...
-func NewTxOutput(value int, address string) *TxOutput {
-	txo := TxOutput{value, nil}
-	txo.Lock([]byte(address))
-
-	return &txo
-}
-
 // NewCoinbaseTX ...
 func NewCoinbaseTX(to, data string) *Transaction {
 	if len(data) == 0 {
@@ -79,14 +36,14 @@ func NewCoinbaseTX(to, data string) *Transaction {
 }
 
 // NewUTXOTransaction ...
-func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transaction {
+func NewUTXOTransaction(from, to string, amount int, u *UTxOSet) *Transaction {
 	var inputs []TxInput
 	var outputs []TxOutput
 
 	wallet := NewWallets().Wallet(from)
 
 	pubKey := HashPublicKey(wallet.PublicKey)
-	acc, validOutputs := bc.FindSpendableOutputs(pubKey, amount)
+	acc, validOutputs := u.FindSpendableOutputs(pubKey, amount)
 	if acc < amount {
 		log.Fatalf("Not enough balance: left %d", acc)
 	}
@@ -108,7 +65,7 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transactio
 
 	tx := Transaction{nil, inputs, outputs}
 	tx.ID = tx.Hash()
-	bc.SignTransactioin(&tx, wallet.PrivateKey)
+	u.BC.SignTransactioin(&tx, wallet.PrivateKey)
 
 	return &tx
 }

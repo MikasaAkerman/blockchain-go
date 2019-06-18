@@ -2,6 +2,7 @@ package main
 
 const (
 	dbFile              = "block-chain.db"
+	utxoBucket          = "utxoBucket"
 	blocksBucket        = "blocksBucket"
 	subsidy             = 50
 	genesisCoinbaseData = "Genesis data"
